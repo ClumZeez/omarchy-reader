@@ -1,9 +1,9 @@
 # Reader
 
-A minimal ebook reader for the Omarchy bar. A library of covers, a table of
-contents that works, and it remembers your place. It scrolls or turns pages,
-by day or by night, and lets you select and copy. Offline; no accounts, no
-network.
+A minimal ebook reader for the Omarchy bar. A library of your ebooks, a table of contents that just works, and it remembers where you were so you can pick up where you last left off.
+
+It can take on your Omarchy theme or for better readability on some themes, there's a separate day/night mode in the plugin as well as font scaling options.
+
 
 ![The library, a book and its contents](preview.png)
 
@@ -20,32 +20,8 @@ Move it with `omarchy bar move clumzeez.reader --after <widget-id>`.
 Reader needs nothing beyond what Omarchy already ships: the reader is plain
 QML and the book converter is Python's standard library.
 
-## Reading
-
-Left-click the book icon in the bar. The first time you see your library;
-after that Reader opens the book you were reading, where you left it.
-Right-click the icon to go straight to the library.
-
-The keys are the same letters everywhere, and `?` shows them all:
-
-| Where | Keys |
-|---|---|
-| a book | `←` `→` previous, next page · `Space` / `Shift+Space`, `PgDn` / `PgUp` the same · `↑` `↓` scroll a little (in pages: turn) · `[` `]` previous, next chapter · `g` / `G`, `Home` / `End` start, end · `Backspace` back from a jump · `t` contents · `+` `-` `0` text size |
-| anywhere | `b` library, and back to the book · `s` settings · `p` pages or scrolling · `d` day, night, or the shell's colours · `?` every key · `Esc` one step back, then close · `Tab` / `Shift+Tab` the next, previous panel on the bar |
-| the library | arrows move · `Enter` open · `/` search · `r` look for new books · `o` open the book folder |
-| the contents | `↑` `↓` move · `←` `→` fold, unfold · `Enter` go there · `/` filter |
-
-`h` `j` `k` `l` work as the arrows, and the letters work in capitals too, as
-in Omarchy's own panels.
-
-With the mouse: click a cover, a chapter, a link; click the title at the top
-of a book for its contents; the wheel scrolls, or turns pages. Dragging over
-text selects it, across paragraphs too, and what is selected is copied to the
-clipboard as you let go. A double click takes a word, a third the paragraph.
-
 To open or close Reader from the keyboard, add a line to
-`~/.config/hypr/bindings.lua`, with a chord nothing else uses (Omarchy's
-defaults leave `SUPER + CTRL + G` free):
+`~/.config/hypr/bindings.lua`, with a chord nothing else uses
 
 ```lua
 o.bind("SUPER + CTRL + G", "Reader", "omarchy-shell shell toggle clumzeez.reader")
@@ -53,20 +29,6 @@ o.bind("SUPER + CTRL + G", "Reader", "omarchy-shell shell toggle clumzeez.reader
 
 To take over a chord that is already bound, put `hl.unbind("…")` with the
 same chord on the line before.
-
-## Settings
-
-The gear at the top of the library, or `s` from anywhere.
-
-- **Turn pages** — a page at a time instead of scrolling. A page starts and
-  ends between two lines, never through one; a picture that does not fit
-  waits for the next page, and a heading goes over with what it heads.
-- **Appearance** — Auto keeps your shell's colours; Day and Night are paper
-  and ink of their own.
-- **Text size** — also `+` `-` `0` while reading.
-- **Open book folder** — in your file manager, to drop new books in.
-- **Free books** — three libraries of public-domain books worth knowing.
-- **Keyboard Shortcuts** — in the corner; every key, as `?` shows them.
 
 ## Your books
 
@@ -158,24 +120,6 @@ Text is drawn by read-only text edits, the one text item that can say which
 character is under a point; that is what selecting rests on. Their lines are
 a fixed whole number of pixels apart, which is what lets a page be cut
 between two of them.
-
-## Tests
-
-```sh
-tests/run.sh          # everything
-tests/run.sh js       # Reader.js, under node
-tests/run.sh py       # the converter, under unittest
-tests/run.sh qml      # the interface, offscreen
-tests/run.sh e2e      # interface and converter together, across restarts
-```
-
-The interface tests run the real Omarchy UI kit and theme against stand-ins
-for the few Quickshell types that need a compositor; nothing touches the
-running shell, no window opens and nothing reaches the clipboard. The
-converter's tests build their own
-books; they also check your library and any samples in
-`~/.cache/omarchy-reader-test-samples` when those exist, and skip that part when
-they do not.
 
 ## Licence
 
