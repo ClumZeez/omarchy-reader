@@ -1,0 +1,4 @@
+module ReaderHarness
+Shot 1.0 Shot.qml
+BarHost 1.0 BarHost.qml
+PluginShellApi 1.0 PluginShellApi.qml

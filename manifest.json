@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "clumzeez.reader",
+  "name": "Reader",
+  "version": "0.3.0",
+  "author": "ClumZeez",
+  "license": "MIT",
+  "description": "A minimal ebook reader for the Omarchy bar: a cover-art library, a table of contents that works, pages or scrolling, day or night, and it remembers your place. Offline.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Reader",
+    "description": "Read your ebooks from the bar",
+    "category": "Reading",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "folder": "",
+      "fontSize": 0
+    },
+    "schema": [
+      {
+        "key": "folder",
+        "type": "path",
+        "label": "Library folder",
+        "description": "Where your books are. Leave empty to use ~/Books, ~/Documents/Books or ~/Documents/EPUB.",
+        "defaultValue": ""
+      },
+      {
+        "key": "fontSize",
+        "type": "integer",
+        "label": "Reading text size",
+        "description": "In pixels. 0 follows the shell's text size. Also adjustable in the reader with + and -.",
+        "min": 0,
+        "max": 40,
+        "step": 1,
+        "defaultValue": 0
+      }
+    ]
+  }
+}
