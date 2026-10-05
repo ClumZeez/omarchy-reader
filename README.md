@@ -2,8 +2,6 @@
 
 A minimal ebook reader for the Omarchy bar. A library of your ebooks, a table of contents that just works, and it remembers where you were so you can pick up where you last left off.
 
-It can take on your Omarchy theme or for better readability on some themes, there's a separate day/night mode in the plugin as well as font scaling options.
-
 
 ![The library, a book and its contents](preview.png)
 
