@@ -13,6 +13,7 @@ from reader.textutil import (
     strip_declarations,
     strip_illegal_xml,
     title_sort_key,
+    keep_private,
     write_atomic,
 )
 
@@ -223,6 +224,25 @@ class TestWriteAtomic(unittest.TestCase):
         with open(path, "rb") as written:
             self.assertEqual(written.read(), b"two")
         self.assertEqual(os.listdir(os.path.dirname(path)), ["meta.json"])
+
+    def test_what_is_written_is_closed_to_other_users(self):
+        mask = os.umask(0o022)
+        self.addCleanup(os.umask, mask)
+        path = os.path.join(self._tmp.name, "books", "key", "meta.json")
+        write_atomic(path, b"one")
+        write_atomic(path, b"two")
+        self.assertEqual(os.stat(path).st_mode & 0o777, 0o600)
+        for directory in (os.path.dirname(path), os.path.join(self._tmp.name, "books")):
+            self.assertEqual(os.stat(directory).st_mode & 0o777, 0o700)
+        self.assertEqual(os.umask(0o022), 0o022)
+
+    def test_an_open_directory_is_closed(self):
+        directory = os.path.join(self._tmp.name, "cache")
+        os.mkdir(directory)
+        os.chmod(directory, 0o755)
+        keep_private(directory)
+        self.assertEqual(os.stat(directory).st_mode & 0o777, 0o700)
+        keep_private(os.path.join(self._tmp.name, "absent"))
 
     def test_failure_leaves_nothing_behind(self):
         target = os.path.join(self._tmp.name, "taken")

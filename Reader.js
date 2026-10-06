@@ -86,7 +86,7 @@ function cleanPosition(raw) {
     b: Math.floor(b),
     f: clamp(raw.f, 0, 1),
     p: clamp(raw.p, 0, 1),
-    x: typeof raw.x === "string" ? raw.x : "",
+    x: typeof raw.x === "string" ? mark(raw.x) : "",
     c: typeof raw.c === "string" ? raw.c : "",
     t: isFinite(Number(raw.t)) ? Math.max(0, Math.floor(Number(raw.t))) : 0,
     path: typeof raw.path === "string" ? raw.path : "",
@@ -217,6 +217,29 @@ function snippet(block) {
   return plainText(block).replace(/\u00ad/g, "").replace(/\s+/g, " ").trim().substring(0, SNIPPET_LENGTH)
 }
 
+// What is kept of those words with a saved place: a fingerprint, never the
+// words. A place saved by an earlier version, which did keep them, is turned
+// into its fingerprint the first time it is read, so the words go from the
+// file at the next save.
+var MARK = /^#[0-9a-f]{14}$/
+
+function mark(words) {
+  var s = String(words || "")
+  if (s === "" || MARK.test(s)) return s
+  var h1 = 0xdeadbeef
+  var h2 = 0x41c6ce57
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i)
+    h1 = Math.imul(h1 ^ c, 2654435761)
+    h2 = Math.imul(h2 ^ c, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  var high = ((h2 >>> 0) & 0xffffff).toString(16)
+  var low = (h1 >>> 0).toString(16)
+  return "#" + ("000000" + high).slice(-6) + ("00000000" + low).slice(-8)
+}
+
 // Weight of a block for progress. Pictures and rules count for something so
 // an image-only book still advances.
 function blockWeight(block) {
@@ -304,7 +327,7 @@ function relocate(prep, saved) {
   var last = prep.count - 1
 
   if (pos.b <= last && pos.c === prep.conv) {
-    if (!pos.x || snippet(prep.blocks[pos.b]) === pos.x) return { b: pos.b, f: pos.f }
+    if (!pos.x || mark(snippet(prep.blocks[pos.b])) === pos.x) return { b: pos.b, f: pos.f }
   }
 
   var guess = pos.p > 0 ? blockAtProgress(prep, pos.p).b : Math.min(pos.b, last)
@@ -316,8 +339,8 @@ function relocate(prep, saved) {
       var down = guess - step
       var up = guess + step
       if (down < 0 && up > last) break
-      if (down >= 0 && snippet(prep.blocks[down]) === pos.x) return { b: down, f: pos.f }
-      if (step > 0 && up <= last && snippet(prep.blocks[up]) === pos.x) return { b: up, f: pos.f }
+      if (down >= 0 && mark(snippet(prep.blocks[down])) === pos.x) return { b: down, f: pos.f }
+      if (step > 0 && up <= last && mark(snippet(prep.blocks[up])) === pos.x) return { b: up, f: pos.f }
     }
   }
   if (pos.p > 0) return blockAtProgress(prep, pos.p)
@@ -330,7 +353,7 @@ function makePosition(prep, b, f, now, path, title) {
     b: i,
     f: clamp(f, 0, 1),
     p: progressAt(prep, i, f),
-    x: prep && prep.count > 0 ? snippet(prep.blocks[i]) : "",
+    x: prep && prep.count > 0 ? mark(snippet(prep.blocks[i])) : "",
     c: prep ? prep.conv : "",
     t: Math.floor(Number(now) || 0),
     path: path || "",

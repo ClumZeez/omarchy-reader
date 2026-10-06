@@ -11,6 +11,7 @@ import traceback
 
 from . import library
 from .errors import ReaderError
+from .textutil import keep_private
 
 _INTERNAL = "Something went wrong inside Reader."
 _USAGE = "Reader was asked to do something it doesn't know how to do."
@@ -84,6 +85,8 @@ def _options(argv: list[str]) -> tuple[str, list[str], list[str]]:
 def _run(argv: list[str]) -> dict:
     cache, dirs, rest = _options(argv)
     command = rest[0] if rest else ""
+    # A cache made by an earlier version was open to other users.
+    keep_private(cache)
     if command == "scan" and len(rest) == 1:
         return library.scan(dirs or None, cache)
     if command == "open" and len(rest) == 2 and not dirs:

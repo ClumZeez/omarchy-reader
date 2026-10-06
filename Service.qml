@@ -24,7 +24,7 @@ Item {
   // What the widgets expect of this object. A service outlives a plugin
   // update (it is kept loaded), so a widget from a newer Reader may find one
   // from an older; it checks this before relying on anything.
-  readonly property int apiVersion: 4
+  readonly property int apiVersion: 5
 
   // Where the backend lives. Tests point this at a stand-in.
   property var backendCommand: ["python3", "-B", pluginDir + "/bin/reader"]
@@ -117,8 +117,7 @@ Item {
 
   function adoptStore(text) {
     if (!Reader.stateIsReadable(text)) {
-      damagedFile.path = statePath + ".damaged"
-      damagedFile.setText(text)
+      keepDamaged.running = true
     }
     store = Reader.parseState(text)
     view = store.view
@@ -490,9 +489,39 @@ Item {
 
   // ---------------------------------------------------------------- plumbing
 
+  // The state says what a person reads and how far they have got: it is
+  // theirs alone. Files are otherwise made readable by every user of the
+  // computer, and a file once made keeps the access it has, so before it is
+  // ever read or written it is made, if need be, and closed to everyone
+  // else. Only then is it opened.
+  property bool statePrivate: false
+
+  Process {
+    id: closeState
+    command: ["sh", "-c", 'umask 077; mkdir -p -- "$(dirname -- "$0")" && { [ -e "$0" ] || : > "$0"; } && chmod 600 -- "$0"; '
+      + 'if [ -e "$0.damaged" ]; then chmod 600 -- "$0.damaged"; fi', root.statePath]
+    running: true
+    onExited: root.statePrivate = true
+  }
+
+  // A state file that could not be understood is set aside, so the next
+  // save does not destroy what a person might still recover by hand. The
+  // copy keeps the original's access: private.
+  Process {
+    id: keepDamaged
+    command: ["cp", "-p", "--", root.statePath, root.statePath + ".damaged"]
+  }
+
+  // Should that program never report, the state is opened all the same.
+  Timer {
+    interval: 3000
+    running: !root.statePrivate
+    onTriggered: root.statePrivate = true
+  }
+
   FileView {
     id: stateFile
-    path: root.statePath
+    path: root.statePrivate ? root.statePath : ""
     atomicWrites: true
     printErrors: false
     onLoaded: root.adoptStore(text())
@@ -500,7 +529,7 @@ Item {
     // treating it as "no state yet" straight away would later overwrite every
     // saved position, so ask again before believing it.
     onLoadFailed: {
-      if (root.storeReady) return
+      if (root.storeReady || !root.statePrivate) return
       root.loadAttempts++
       if (root.loadAttempts < 3) retryLoad.restart()
       else root.adoptStore("")
@@ -511,14 +540,6 @@ Item {
     id: retryLoad
     interval: 700
     onTriggered: stateFile.reload()
-  }
-
-  // Where a state file that could not be understood is kept, so the next
-  // save does not destroy what a person might still recover by hand.
-  FileView {
-    id: damagedFile
-    atomicWrites: true
-    printErrors: false
   }
 
   Timer {

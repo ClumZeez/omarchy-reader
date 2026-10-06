@@ -21,7 +21,7 @@ Panel {
   // A service is kept loaded across a plugin update, so right after one this
   // widget can be newer than the service it finds. Nothing is built on a
   // service that does not say it has what this widget needs.
-  readonly property bool serviceFits: service !== null && service.apiVersion === 4
+  readonly property bool serviceFits: service !== null && service.apiVersion === 5
   readonly property color fg: bar ? bar.foreground : Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 

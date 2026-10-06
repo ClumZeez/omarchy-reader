@@ -49,7 +49,26 @@ if [[ $suite == all || $suite == e2e ]]; then
       grep -E '^(FAIL|QWARN|Totals)|Loc:|Actual|Expected' || status=1
   }
   mkdir -p "$work/harness"
+  # A state file left open to everyone by an earlier version, or by anything
+  # else, is closed before it is used; so is the copy set aside when damaged.
+  private() {
+    local mode
+    mode=$(stat -c %a "$1" 2>/dev/null)
+    if [[ $mode != 600 ]]; then
+      echo "FAIL: $1 has mode ${mode:-none}, not 600"
+      status=1
+    fi
+  }
+  state="$work/harness/home/.local/state/omarchy/settings/reader.json"
+  mkdir -p "$(dirname "$state")"
+  : > "$state"
+  chmod 644 "$state"
   journey read
+  private "$state"
+  if grep -q "The Long Walk [0-9]" "$state" || ! grep -q '"x":"#' "$state"; then
+    echo "FAIL: the saved state holds words of the book"
+    status=1
+  fi
   mkdir -p "$work/books/elsewhere"
   mv "$work/books/The Long Walk.epub" "$work/books/elsewhere/a-long-walk.epub"
   journey resume
@@ -59,6 +78,8 @@ if [[ $suite == all || $suite == e2e ]]; then
   journey gone
   printf '{ "books": { "cut off in the mid' > "$work/harness/home/.local/state/omarchy/settings/reader.json"
   journey damaged
+  private "$state"
+  private "$state.damaged"
   rm -rf "$work"
 fi
 

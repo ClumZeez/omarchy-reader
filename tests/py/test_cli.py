@@ -37,6 +37,16 @@ class CliCase(unittest.TestCase):
         self.assertEqual(text.count("\n"), 1, text)
         return status, json.loads(text), err.getvalue()
 
+    def test_a_cache_left_open_by_an_earlier_version_is_closed(self):
+        mask = os.umask(0o022)
+        self.addCleanup(os.umask, mask)
+        os.makedirs(os.path.join(self.cache, "books"))
+        os.chmod(self.cache, 0o755)
+        status, result, _ = self.run_main("--cache", self.cache, "--dir", self.books, "scan")
+        self.assertEqual((status, result["ok"]), (0, True))
+        self.assertEqual(os.stat(self.cache).st_mode & 0o777, 0o700)
+        self.assertEqual(os.stat(os.path.join(self.cache, "index.json")).st_mode & 0o777, 0o600)
+
     def failure(self, *argv):
         status, result, _ = self.run_main(*argv)
         self.assertEqual(status, 1)

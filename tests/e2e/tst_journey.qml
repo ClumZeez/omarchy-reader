@@ -202,7 +202,7 @@ Item {
       // Every block has moved down by the preface; the place is where the
       // same words are now.
       verify(service.posBlock > place.b)
-      compare(Reader.snippet(service.blocks[service.posBlock]), place.x)
+      compare(Reader.mark(Reader.snippet(service.blocks[service.posBlock])), place.x)
       compare(service.chapterTitle, "Chapter 7")
       keyClick(Qt.Key_Escape)
       tryVerify(function() { return !widget.opened }, 3000)

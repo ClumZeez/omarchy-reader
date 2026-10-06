@@ -72,7 +72,10 @@ eq("empty state on empty", F.parseState(""), F.emptyState());
   eq("state current", s.current, "k1");
   eq("state view", s.view, "reader");
   eq("state font", s.fontPx, 15);
-  eq("state position kept", s.books.k1, { b: 12, f: 0.5, p: 0.25, x: "Hello", c: "1", t: 100, path: "/a.epub", title: "A" });
+  eq("state position kept", s.books.k1, { b: 12, f: 0.5, p: 0.25, x: F.mark("Hello"), c: "1", t: 100, path: "/a.epub", title: "A" });
+  ok("words kept by an earlier version are gone once the state is read", JSON.stringify(s).indexOf("Hello") === -1
+     && F.serializeState(s).indexOf("Hello") === -1);
+  eq("and a fingerprint stays as it is", F.parseState(F.serializeState(s)).books.k1.x, F.mark("Hello"));
   ok("state drops non-object book", !("bad" in s.books));
   eq("state clamps wild values", s.books.k2, { b: 0, f: 1, p: 0, x: "", c: "", t: 0, path: "", title: "" });
   eq("state serialises and reparses", F.parseState(F.serializeState(s)), s);
@@ -164,7 +167,14 @@ eq("empty book relocate", F.relocate(F.prepareBook(null), { b: 3 }), { b: 0, f: 
 // ---- position round trip and re-anchoring
 (() => {
   const saved = F.makePosition(prep, 3, 0.4, 1234, "/a.epub", "A");
-  eq("saved snippet", saved.x, "b" + "b".repeat(47));
+  eq("what is saved of the words is their fingerprint", saved.x, F.mark("b" + "b".repeat(47)));
+  ok("a fingerprint holds none of the words", /^#[0-9a-f]{14}$/.test(saved.x) && F.mark("") === ""
+     && F.mark("one thing") !== F.mark("another") && F.mark("one thing") === F.mark("one thing"));
+  ok("no words of the book are in what is written", (function() {
+    const state = F.withPosition(F.emptyState(), "k", F.makePosition(prep, 3, 0.4, 1234, "/a.epub", "A"));
+    const text = F.serializeState(state);
+    return prep.blocks.every((block) => typeof block.t !== "string" || block.t.length < 8 || text.indexOf(block.t.substring(0, 8)) === -1);
+  })());
   eq("saved conv", saved.c, "1");
   eq("same conversion restores exactly", F.relocate(prep, saved), { b: 3, f: 0.4 });
 

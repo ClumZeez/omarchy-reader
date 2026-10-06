@@ -5,6 +5,7 @@ from __future__ import annotations
 import codecs
 import os
 import re
+import stat
 import tempfile
 import unicodedata
 from html.entities import html5
@@ -245,10 +246,27 @@ def title_sort_key(title: str) -> str:
     return key or plain
 
 
+def keep_private(directory: str) -> None:
+    """Close a directory that exists to everyone but its owner."""
+    try:
+        if stat.S_IMODE(os.stat(directory).st_mode) & 0o077:
+            os.chmod(directory, 0o700)
+    except OSError:
+        pass
+
+
 def write_atomic(path: str, data: bytes) -> None:
-    """Write a file so that readers only ever see the old or the new content."""
+    """Write a file so that readers only ever see the old or the new content.
+
+    What is written is the text and pictures of a person's books: the file,
+    and any directory made for it, is theirs alone.
+    """
     directory = os.path.dirname(os.path.abspath(path))
-    os.makedirs(directory, exist_ok=True)
+    mask = os.umask(0o077)
+    try:
+        os.makedirs(directory, exist_ok=True)
+    finally:
+        os.umask(mask)
     handle, temporary = tempfile.mkstemp(dir=directory, prefix=".", suffix=".tmp")
     try:
         with os.fdopen(handle, "wb") as out:
