@@ -38,12 +38,12 @@ def run_request(bridge, name, live):
             [str(part) for part in req.get("command") or []],
             cwd=req.get("cwd") or None,
             env=env,
-            stdin=subprocess.DEVNULL,
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         live[rid] = proc
-        out, err = proc.communicate()
+        out, err = proc.communicate(str(req.get("stdin") or "").encode("utf-8"))
         result["code"] = proc.returncode
         result["stdout"] = out.decode("utf-8", "replace")
         result["stderr"] = err.decode("utf-8", "replace")

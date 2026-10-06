@@ -24,14 +24,14 @@ Item {
   // What the widgets expect of this object. A service outlives a plugin
   // update (it is kept loaded), so a widget from a newer Reader may find one
   // from an older; it checks this before relying on anything.
-  readonly property int apiVersion: 3
+  readonly property int apiVersion: 4
 
   // Where the backend lives. Tests point this at a stand-in.
   property var backendCommand: ["python3", "-B", pluginDir + "/bin/reader"]
   // The ways out of the reader: the desktop's opener and the clipboard.
-  // Both are handed over detached, so tests see them asked for, never run.
+  // Tests point both elsewhere.
   property var openCommand: ["xdg-open"]
-  property var copyCommand: ["wl-copy", "--"]
+  property var copyCommand: ["wl-copy"]
   // A first scan reads every book once, which for thousands of books takes
   // minutes. Should even this run out, the backend has recorded how far it
   // got and the next scan carries on from there.
@@ -215,7 +215,7 @@ Item {
   function copyText(text) {
     var clip = Reader.clipboardText(text)
     if (clip.text === "") return false
-    Quickshell.execDetached(copyCommand.concat([clip.text]))
+    copyJob.send(clip.text)
     copied = clip.text
     note(clip.shortened ? "Copied the first part" : "Copied")
     return true
@@ -556,6 +556,52 @@ Item {
       Qt.callLater(function() { if (String(bookFile.path) === loaded) bookFile.path = "" })
     }
     onLoadFailed: root.failOpen("This book could not be opened.")
+  }
+
+  // Puts text on the clipboard. The text is written to the clipboard
+  // program's standard input and never appears among its arguments: what a
+  // program was started with can be read by every user of the computer, and
+  // what a person selects in a book is theirs. The count of bytes is given
+  // so that the program sees the end of the text whether or not the pipe is
+  // closed behind it.
+  Process {
+    id: copyJob
+
+    property string pending: ""
+    property string waiting: ""
+
+    function send(text) {
+      if (running) {
+        // The last copy has not finished; it is cut short for this one.
+        waiting = text
+        running = false
+        return
+      }
+      pending = text
+      stdinEnabled = true
+      command = ["sh", "-c", 'head -c "$0" | "$@"', String(Reader.utf8Length(text))].concat(root.copyCommand)
+      running = true
+    }
+
+    stdinEnabled: true
+    onStarted: {
+      write(pending)
+      pending = ""
+      shut.restart()
+    }
+    onExited: {
+      shut.stop()
+      if (waiting === "") return
+      var next = waiting
+      waiting = ""
+      send(next)
+    }
+  }
+
+  Timer {
+    id: shut
+    interval: 400
+    onTriggered: copyJob.stdinEnabled = false
   }
 
   BackendJob {

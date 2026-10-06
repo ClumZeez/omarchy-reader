@@ -36,7 +36,10 @@ QtObject {
   }
 
   function signal(n) { running = false }
-  function write(data) {}
+  // What was written is handed to the command as its standard input when
+  // it is run, which is just after started() has been heard.
+  property string _stdin: ""
+  function write(data) { _stdin += String(data) }
   function startDetached() { Quickshell.execDetached(command) }
 
   function _fileUrl(name) {
@@ -85,8 +88,10 @@ QtObject {
       id: _id,
       command: command,
       cwd: workingDirectory,
-      environment: environment
+      environment: environment,
+      stdin: _stdin
     }))
+    _stdin = ""
     _poll.start()
   }
 

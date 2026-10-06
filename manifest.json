@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "clumzeez.reader",
   "name": "Reader",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "ClumZeez",
   "license": "MIT",
   "description": "A minimal ebook reader for the Omarchy bar: a cover-art library, a table of contents that works, pages or scrolling, day or night, and it remembers your place. Offline.",

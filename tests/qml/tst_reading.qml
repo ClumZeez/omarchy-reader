@@ -72,9 +72,29 @@ Item {
       return Qt.point(origin.x + dx, origin.y + dy)
     }
 
-    function lastCopy() {
-      var asked = Quickshell.execLog[Quickshell.execLog.length - 1]
-      return asked && asked[0] === "wl-copy" ? asked[asked.length - 1] : null
+    // What the stand-in for the clipboard program was given, newest last.
+    function copies() {
+      var xhr = new XMLHttpRequest()
+      try {
+        xhr.open("GET", "file://" + Quickshell.env("HOME") + "/clipboard.log", false)
+        xhr.send()
+      } catch (e) {
+        return []
+      }
+      return (xhr.responseText || "").split("\n").filter(function(line) { return line !== "" })
+        .map(function(line) { return JSON.parse(line) })
+    }
+
+    // The newest copy is `text`, it came on standard input, and nothing of
+    // it was among the program's arguments or anywhere in what was run.
+    function copied(text) {
+      tryVerify(function() {
+        var all = copies()
+        return all.length > 0 && all[all.length - 1].text === text
+      }, 5000, "the clipboard was given " + JSON.stringify(text))
+      var all = copies()
+      compare(all[all.length - 1].argv, [])
+      compare(Quickshell.execLog.filter(function(asked) { return asked.join(" ").indexOf(text) >= 0 }).length, 0)
     }
 
     // Whether `y` (the list's own coordinates) falls between two lines, or
@@ -120,6 +140,7 @@ Item {
       verify(root.plugin !== "", "pass plugin=<repository root>")
       tryVerify(function() { return host.service !== null }, 5000)
       host.service.backendCommand = ["python3", "-B", root.plugin + "/tests/qml/fake_reader.py"]
+      host.service.copyCommand = ["python3", "-B", root.plugin + "/tests/qml/fake_copy.py"]
       tryVerify(function() { return host.widget !== null && host.service.storeReady }, 5000)
       widget.open()
       tryVerify(function() { return service.books.length === 9 }, 8000)
@@ -137,7 +158,7 @@ Item {
     function test_01_a_drag_selects_and_copies() {
       var item = list.itemAtIndex(1)
       var from = pointIn(1, 60, item.textTop + item.lineStep * 0.5)
-      var copies = Quickshell.execLog.length
+      var asked = Quickshell.execLog.length
       mouseDrag(reader, from.x, from.y, 220, 0, Qt.LeftButton, Qt.NoModifier, 20)
       verify(reader.hasSelection)
       compare([reader.range.sb, reader.range.eb], [1, 1])
@@ -145,8 +166,8 @@ Item {
       var plain = Reader.plainText(service.blocks[1])
       compare(service.copied, plain.substring(reader.range.so, reader.range.eo).trim())
       verify(service.copied.length > 5)
-      compare(Quickshell.execLog.length, copies + 1)
-      compare(lastCopy(), service.copied)
+      compare(Quickshell.execLog.length, asked)
+      copied(service.copied)
       compare(service.notice, "Copied")
       // Selecting is not reading on: the place has not moved.
       compare(service.posBlock, 0)
@@ -234,8 +255,8 @@ Item {
       mouseDrag(reader, out.x, out.y, 70, 0, Qt.LeftButton, Qt.NoModifier, 20)
       compare(service.posBlock, 13)
       verify(reader.hasSelection)
-      compare(lastCopy(), service.copied)
-      compare(Quickshell.execLog.length, opened + 1)
+      copied(service.copied)
+      compare(Quickshell.execLog.length, opened)
       keyClick(Qt.Key_Escape)
     }
 
