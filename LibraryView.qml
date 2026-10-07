@@ -77,7 +77,7 @@ Item {
     boundsBehavior: Flickable.StopAtBounds
     interactive: contentHeight > height
     cellWidth: Math.floor(width / view.columns)
-    cellHeight: coverHeight + Style.space(58)
+    cellHeight: coverHeight + Style.space(58) + Style.space(9)
     model: view.shown
 
     delegate: CoverTile {

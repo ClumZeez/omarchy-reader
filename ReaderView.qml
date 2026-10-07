@@ -15,7 +15,8 @@ import "Reader.js" as Reader
 //
 // The book either scrolls or is turned a page at a time. A page starts and
 // ends between two lines: the list is shown through a frame that is cut off
-// under the last whole line, and turning puts the next line at the top.
+// under the last whole line, and turning puts the next line at the top. A
+// chapter begins a page of its own, however little the one before it holds.
 //
 // The mouse selects text (which copies it) rather than dragging the page;
 // the wheel scrolls or turns.
@@ -30,6 +31,7 @@ Item {
   property string fontFamily: Style.font.family
   property bool lightPage: false
   readonly property bool paged: service ? service.paged === true : false
+  readonly property var starts: service && service.pageStarts ? service.pageStarts : ({})
   readonly property bool busy: service ? service.opening : false
   readonly property string problem: service ? service.openError : ""
   readonly property int lineStep: Math.round(fontPx * 1.6)
@@ -84,9 +86,39 @@ Item {
     var limit = top + list.height
     var index = list.indexAt(list.width / 2, limit - 1)
     var item = index >= 0 ? list.itemAtIndex(index) : null
-    if (!item) return limit
-    var cut = aboveHeadings(item.y + item.cutAtOrBefore(limit - item.y), top)
+    var cut = item ? item.y + item.cutAtOrBefore(limit - item.y) : limit
+    cut = beforeChapter(top, cut)
+    if (item) cut = aboveHeadings(cut, top)
     return cut > top + 0.5 ? cut : limit
+  }
+
+  // A chapter begins a page: a page from `top` that would run on to `cut`
+  // ends instead above the first chapter to begin in between.
+  function beforeChapter(top, cut) {
+    var from = list.indexAt(list.width / 2, top + 0.5)
+    var to = list.indexAt(list.width / 2, cut - 0.5)
+    if (from < 0) return cut
+    if (to < 0) to = list.count - 1
+    for (var index = from; index <= to; index++) {
+      if (starts[index] !== true) continue
+      var item = list.itemAtIndex(index)
+      if (item && item.y + item.gap > top + 0.5 && item.y < cut - 0.5) return item.y
+    }
+    return cut
+  }
+
+  // And going back: a page that ends at `ends` and would start at `top`
+  // starts instead with the last chapter to begin in between.
+  function fromChapter(top, ends) {
+    var from = list.indexAt(list.width / 2, top + 0.5)
+    var to = list.indexAt(list.width / 2, ends - 0.5)
+    if (from < 0 || to < 0) return top
+    for (var index = to; index >= from; index--) {
+      if (starts[index] !== true) continue
+      var item = list.itemAtIndex(index)
+      if (item && item.y + item.gap > top + 0.5 && item.y < ends - 0.5) return item.y + item.gap
+    }
+    return top
   }
 
   // A heading goes with what it heads. A cut that would leave one as the
@@ -272,7 +304,7 @@ Item {
         reach(ends - list.height)
         var first = lineTopAtOrAfter(list.contentY)
         if (first >= ends - 0.5) first = lineTopAtOrBefore(list.contentY)
-        reach(first)
+        reach(fromChapter(first, ends))
         pageBottom = Math.min(Math.max(ends, list.contentY + 1), pageEnd(list.contentY))
       }
     }

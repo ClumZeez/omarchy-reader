@@ -421,6 +421,29 @@ function tocTitleAt(prep, b) {
   return i < 0 ? "" : String(prep.toc[i].t || "")
 }
 
+// The blocks that begin a page when the book is in pages: where each of the
+// book's files starts, and what the two outer levels of its contents point
+// at - the parts and chapters, and the sections where a book has parts. Not
+// the very first block, which begins a page anyway; and not a block that
+// follows a heading, so the title of a part stays over its first chapter.
+function pageStarts(prep) {
+  var starts = {}
+  if (!prep || prep.count === 0) return starts
+  var wanted = prep.sections.slice()
+  for (var i = 0; i < prep.tocOrder.length; i++) {
+    var entry = prep.toc[prep.tocOrder[i]]
+    if (!(Number(entry.d) > 1)) wanted.push(entry.b)
+  }
+  for (var j = 0; j < wanted.length; j++) {
+    var b = Math.floor(Number(wanted[j]))
+    if (!(b > 0) || b >= prep.count) continue
+    var before = prep.blocks[b - 1]
+    if (before && before.k === "h") continue
+    starts[b] = true
+  }
+  return starts
+}
+
 // Block to jump to for "next/previous chapter". Uses the contents when the
 // book has one and falls back to its files otherwise. Stepping back from
 // the middle of a chapter goes to that chapter's start first.

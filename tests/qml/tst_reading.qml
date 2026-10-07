@@ -295,10 +295,20 @@ Item {
       shot("41-page-one")
     }
 
+    // Whether a chapter begins part-way down the page on show.
+    function chapterInside() {
+      for (var key in service.pageStarts) {
+        var item = list.itemAtIndex(Number(key))
+        if (item && item.y + item.gap > list.contentY + 0.5 && item.y < reader.pageBottom - 0.5) return true
+      }
+      return false
+    }
+
     // Every line of the book is on exactly one page: each page starts where
     // the one before it ended, and neither edge runs through a line.
     function test_11_turning_through_the_whole_book() {
       var pages = 1
+      var begun = 0
       var tops = [topPlace()]
       for (var guard = 0; guard < 400; guard++) {
         var top = list.contentY
@@ -313,7 +323,13 @@ Item {
         verify(reader.pageBottom > list.contentY)
         verify(reader.pageBottom - list.contentY <= list.height + 0.5)
         verify(!headingStranded(), "page " + pages + " does not end with a heading")
+        verify(!chapterInside(), "page " + pages + " has no chapter beginning part-way down it")
+        var first = list.indexAt(list.width / 2, list.contentY)
+        var opens = list.itemAtIndex(first)
+        if (service.pageStarts[first] === true && Math.abs(list.contentY - opens.y - opens.gap) < 0.5) begun++
       }
+      compare(begun, Object.keys(service.pageStarts).length, "every chapter began a page")
+      verify(begun >= 5, "the book has chapters, got " + begun)
       verify(pages > 8, "the book is several pages long, got " + pages)
       compare(service.posBlock, service.blockCount - 1)
       compare(service.progress, 1)
@@ -324,6 +340,7 @@ Item {
       for (var back = tops.length - 2; back >= 0; back--) {
         keyClick(Qt.Key_Left)
         compare(topPlace(), tops[back])
+        verify(!chapterInside())
         verify(cleanCut(list.contentY))
         verify(cleanCut(reader.pageBottom))
       }

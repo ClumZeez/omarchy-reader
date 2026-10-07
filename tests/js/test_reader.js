@@ -251,6 +251,14 @@ eq("toc title", F.tocTitleAt(prep, 3), "One point five");
   eq("out-of-order toc later", F.tocIndexAt(p, 6), 0);
   eq("entries without a block are ignored", p.tocOrder.length, 3);
 })();
+eq("chapters and files begin pages, but not the first block nor one under a heading",
+   F.pageStarts(F.prepareBook({
+     blocks: [{ k: "h", t: "Part" }, { k: "h", t: "One" }, { k: "p", t: "a" }, { k: "h", t: "Two" }, { k: "p", t: "b" },
+              { k: "h", t: "Deep" }, { k: "p", t: "c" }, { k: "p", t: "d" }],
+     sections: [0, 7],
+     toc: [{ t: "Part", d: 0, b: 0 }, { t: "One", d: 1, b: 1 }, { t: "Two", d: 1, b: 3 }, { t: "Deep", d: 2, b: 5 }]
+   })), { 3: true, 7: true });
+eq("a book of nothing begins no pages", F.pageStarts(F.prepareBook({})), {});
 eq("next chapter", F.chapterTarget(prep, 0, 1), 3);
 eq("next chapter from middle", F.chapterTarget(prep, 4, 1), 5);
 eq("next chapter at last stays", F.chapterTarget(prep, 6, 1), 6);

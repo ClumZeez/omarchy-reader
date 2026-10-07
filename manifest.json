@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "clumzeez.reader",
   "name": "Reader",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "author": "ClumZeez",
   "license": "MIT",
-  "description": "A minimal ebook reader for the Omarchy bar: a cover-art library, a table of contents that works, pages or scrolling, day or night, and it remembers your place. Offline.",
+  "description": "A minimal ebook reader for your omarchy bar with a focus on compatibility. Put your book down and pick it up where you left off. Includes a library catalogue of your books, support for table of contents selection and detection, font scaling and day/night modes.",
   "kinds": [
     "service",
     "bar-widget"

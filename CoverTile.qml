@@ -126,21 +126,6 @@ Item {
       }
     }
 
-    Rectangle {
-      visible: tile.progress > 0
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      height: 3
-      color: Util.alpha(Color.background, 0.7)
-
-      Rectangle {
-        width: parent.width * Math.min(1, tile.progress)
-        height: parent.height
-        color: tile.accent
-      }
-    }
-
     // The outline goes over the picture so its edge stays crisp at a
     // fractional display scale.
     Rectangle {
@@ -151,9 +136,30 @@ Item {
     }
   }
 
+  // How far through the book the reader is: a bar under the cover, empty
+  // for a book not yet begun. No figure; the bar says enough.
+  Rectangle {
+    id: bar
+    objectName: "progressBar"
+    visible: tile.book.external !== true && !tile.unreadable
+    y: tile.coverHeight + Style.space(6)
+    width: tile.shownWidth
+    height: 3
+    radius: 1.5
+    color: Util.alpha(tile.fg, 0.14)
+
+    Rectangle {
+      objectName: "progressFill"
+      width: Math.round(parent.width * Math.max(0, Math.min(1, tile.progress)))
+      height: parent.height
+      radius: parent.radius
+      color: tile.accent
+    }
+  }
+
   Text {
     id: title
-    y: tile.coverHeight + Style.space(6)
+    y: bar.y + bar.height + Style.space(6)
     width: tile.coverWidth
     textFormat: Text.PlainText
     text: tile.book.title || ""

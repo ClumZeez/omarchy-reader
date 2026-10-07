@@ -24,7 +24,7 @@ Item {
   // What the widgets expect of this object. A service outlives a plugin
   // update (it is kept loaded), so a widget from a newer Reader may find one
   // from an older; it checks this before relying on anything.
-  readonly property int apiVersion: 5
+  readonly property int apiVersion: 6
 
   // Where the backend lives. Tests point this at a stand-in.
   property var backendCommand: ["python3", "-B", pluginDir + "/bin/reader"]
@@ -103,6 +103,7 @@ Item {
   readonly property int tocIndex: prep ? Reader.tocIndexAt(prep, posBlock) : -1
   readonly property string chapterTitle: tocIndex >= 0 ? String(prep.toc[tocIndex].t || "") : ""
   readonly property var toc: prep ? prep.toc : []
+  readonly property var pageStarts: prep ? Reader.pageStarts(prep) : ({})
   readonly property bool hasBook: blockCount > 0
   // What the bar chip says about the book in hand, loaded or not: after a
   // restart or an idle release only its saved place is known.
