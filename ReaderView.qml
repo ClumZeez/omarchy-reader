@@ -471,7 +471,7 @@ Item {
     // { b, o, link, text } for a point in this area; null over nothing.
     function locate(x, y) {
       if (list.count === 0) return null
-      var cy = Math.max(0, Math.min(height - 1, y)) + list.contentY
+      var cy = Math.max(0, Math.min(frame.height - 1, y)) + list.contentY
       var index = list.indexAt(list.width / 2, cy)
       if (index < 0) {
         // Under the last block: its very end.
@@ -491,7 +491,13 @@ Item {
       if (hit && view.anchor) view.range = Reader.orderRange(view.anchor, { b: hit.b, o: hit.o })
     }
 
-    anchors.fill: frame
+    // As tall as the view, not as the page on show: a short page - the
+    // last of a chapter, a title - leaves room under it, and the wheel
+    // turns the page from there too.
+    anchors.left: frame.left
+    anchors.right: frame.right
+    anchors.top: frame.top
+    height: view.height
     visible: frame.visible
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
@@ -520,7 +526,7 @@ Item {
 
     onPositionChanged: function(mouse) {
       if (!pressed) {
-        var under = locate(mouse.x, mouse.y)
+        var under = mouse.y < frame.height ? locate(mouse.x, mouse.y) : null
         overLink = under !== null && under.link !== ""
         overText = under !== null && under.text
         return
@@ -600,7 +606,7 @@ Item {
           stop()
           return
         }
-        var step = pointer.mouseY < 0 ? -view.lineStep : (pointer.mouseY > pointer.height ? view.lineStep : 0)
+        var step = pointer.mouseY < 0 ? -view.lineStep : (pointer.mouseY > frame.height ? view.lineStep : 0)
         if (step === 0 || (step > 0 && list.atYEnd) || (step < 0 && list.atYBeginning)) return
         list.contentY = view.clampY(list.contentY + step)
         pointer.extendTo(pointer.mouseX, pointer.mouseY)

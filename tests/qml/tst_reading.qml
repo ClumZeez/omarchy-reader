@@ -415,6 +415,29 @@ Item {
       while (service.canGoBack) keyClick(Qt.Key_Backspace)
     }
 
+    // A page that holds little - the last of a chapter - leaves most of
+    // the view empty, and the wheel turns the page from there as well.
+    function test_14b_the_wheel_turns_a_short_page_from_the_room_under_it() {
+      service.jumpTo(0)
+      wait(300)
+      var short = false
+      for (var guard = 0; guard < 200 && !short; guard++) {
+        if (reader.pageBottom - list.contentY < list.height * 0.6) short = true
+        else keyClick(Qt.Key_Right)
+      }
+      verify(short, "the book has a page that ends well above the bottom")
+      var top = list.contentY
+      var under = reader.pageBottom - top + (list.height - (reader.pageBottom - top)) / 2
+      mouseWheel(reader, reader.width / 2, under, 0, -120)
+      verify(list.contentY > top, "the wheel under a short page turns it")
+      wait(120)
+      mouseWheel(reader, reader.width / 2, under, 0, 120)
+      compare(list.contentY, top)
+      wait(120)
+      service.jumpTo(0)
+      wait(300)
+    }
+
     function test_15_text_size_keeps_the_place_and_the_lines_whole() {
       for (var i = 0; i < 3; i++) keyClick(Qt.Key_Right)
       wait(300)
